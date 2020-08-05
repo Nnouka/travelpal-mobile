@@ -521,9 +521,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     fun sendMessage(veiw: View) {
         mapViewModel.onStartTravel(
-            lastLocation, lastAddress,
             Location(lastDestination.longitude, lastDestination.latitude), lastDAddress,
-            distance.toDouble(), durationLong
+            lastLocation, lastAddress,
+            distance.toDouble(), durationLong, duration
         )
 
         mapViewModel.travelInsertComplete.observe(this,  androidx.lifecycle.Observer {

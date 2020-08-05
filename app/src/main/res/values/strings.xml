@@ -27,4 +27,8 @@
     <string name="price_string">%1$s FCFA</string>
     <string name="book_button_text">Book</string>
     <string name="details_text">Details</string>
+    <string name="origin_detials_text">Origin</string>
+    <string name="destination_text">Destination</string>
+    <string name="distance">Distance</string>
+    <string name="duration">Duration</string>
 </resources>

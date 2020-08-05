@@ -9,5 +9,6 @@ data class FormattedTravel(
     val destinationLocation: Location,
     val destinationAddress: LocationAddress,
     val distance: Double,
-    val duration: Long
+    val duration: Long,
+    val durationText: String
 )

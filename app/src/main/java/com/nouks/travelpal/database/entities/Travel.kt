@@ -15,5 +15,7 @@ data class Travel(
     @ColumnInfo(name = "distance")
     var distance: Double = 0.0,
     @ColumnInfo(name = "duration")
-    var duration: Long = 0L
+    var duration: Long = 0L,
+    @ColumnInfo(name = "duration_text")
+    var durationText: String
 )

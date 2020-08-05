@@ -60,7 +60,7 @@ class MapViewModel(
     }
 
     fun onStartTravel(oLocation: Location, oAddress: LocationAddress,
-                      dLocation: Location, dAddress: LocationAddress, distance: Double, duration: Long) {
+                      dLocation: Location, dAddress: LocationAddress, distance: Double, duration: Long, durationText: String) {
         uiScope.launch {
             _travelInsertComplete.value = false
             var oLocEntity : LocationEntity? = LocationEntity(
@@ -72,7 +72,7 @@ class MapViewModel(
                 oLocation.lng
             )
             insertLocation(oLocEntity)
-            oLocEntity = getLocationByName(LocationName.ORIGIN.toString())
+            oLocEntity = getLatestLocation()
             var dLocEntity : LocationEntity? = LocationEntity(
                 0L,
                 dAddress.formattedAddress,
@@ -82,14 +82,14 @@ class MapViewModel(
                 dLocation.lng
             )
             insertLocation(dLocEntity)
-            dLocEntity = getLocationByName(LocationName.ORIGIN.toString())
+            dLocEntity = getLatestLocation()
 
             // insert Journey
             val travel = Travel(
                 0L,
                 oLocEntity!!.id,
                 dLocEntity!!.id,
-                distance, duration
+                distance, duration, durationText
             )
 
             _travelId = insertTravel(travel)!!.id
@@ -116,6 +116,11 @@ class MapViewModel(
         }
     }
 
+    private suspend fun getLatestLocation(): LocationEntity? {
+        return withContext(Dispatchers.IO) {
+            database.getLatestLocation()
+        }
+    }
     private suspend fun insertTravel(travel: Travel): Travel? {
         return withContext(Dispatchers.IO) {
             database.insertTravel(travel)

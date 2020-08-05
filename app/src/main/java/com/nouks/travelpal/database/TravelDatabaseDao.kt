@@ -46,4 +46,7 @@ interface TravelDatabaseDao {
     @Query("SELECT * from travel_data ORDER BY id DESC LIMIT 1")
     fun getLatestTravel(): Travel?
 
+    @Query("SELECT * from locations ORDER BY id DESC LIMIT 1")
+    fun getLatestLocation(): LocationEntity?
+
 }

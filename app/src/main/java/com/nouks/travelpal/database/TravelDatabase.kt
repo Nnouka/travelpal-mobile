@@ -8,7 +8,7 @@ import com.nouks.travelpal.database.entities.LocationEntity
 import com.nouks.travelpal.database.entities.Travel
 import com.nouks.travelpal.database.entities.User
 
-@Database(entities = [LocationEntity::class, Travel::class, User::class], version = 1, exportSchema = false)
+@Database(entities = [LocationEntity::class, Travel::class, User::class], version = 2, exportSchema = false)
 abstract class TravelDatabase: RoomDatabase() {
     /**
      * Connects the database to the DAO.

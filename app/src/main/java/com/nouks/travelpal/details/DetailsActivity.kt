@@ -7,9 +7,8 @@ import androidx.lifecycle.ViewModelProviders
 import com.nouks.travelpal.R
 import com.nouks.travelpal.database.TravelDatabase
 import com.nouks.travelpal.maps.EXTRA_MESSAGE
-import com.nouks.travelpal.maps.MapViewModel
-import com.nouks.travelpal.maps.MapViewModelFactory
 import kotlinx.android.synthetic.main.activity_details.*
+import kotlinx.android.synthetic.main.activity_maps.*
 
 class DetailsActivity : AppCompatActivity() {
     private lateinit var detailsViewModel: DetailsViewModel
@@ -26,11 +25,13 @@ class DetailsActivity : AppCompatActivity() {
                 this, viewModelFactory).get(DetailsViewModel::class.java)
         setContentView(R.layout.activity_details)
         val message = intent.getLongExtra(EXTRA_MESSAGE, 0)
-        details_text.text = message.toString()
         detailsViewModel.onPreviewReady(message)
         detailsViewModel.travel.observe(this, Observer {  travel ->
             travel?.let {
-                details_text.text = travel.toString()
+                origin_details.text = travel.originAddress.formattedAddress
+                destination_details.text = travel.destinationAddress.formattedAddress
+                distance_duration_details.text = getString(R.string.duration_distance, travel.durationText, "${(travel.distance / 1000)} Km")
+                price_details.text = getString(R.string.price_string, detailsViewModel.getPriceFromDistance(travel.distance.toFloat()).toString())
             }
         })
     }

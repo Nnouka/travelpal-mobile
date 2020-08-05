@@ -1,4 +1,4 @@
-package com.nouks.travelpal.api
+package com.nouks.travelpal.api.travelpal
 
 import com.nouks.travelpal.model.google.directions.Directions
 import com.nouks.travelpal.model.google.nearbySearch.NearbySearch
@@ -6,7 +6,7 @@ import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface GoogleMethods {
+interface TravelPalMethods {
     // Google Place API -- Nearby search
     @GET("place/nearbysearch/json")
     fun getNearbySearch(

@@ -85,7 +85,7 @@ class DetailsViewModel(
         return withContext(Dispatchers.IO) {
            val travel = database.getTravel(id)
             val origin = database.getLocationById(travel!!.originLocationId)
-            val destination = database.getLocationById(travel!!.destinationLocationId)
+            val destination = database.getLocationById(travel.destinationLocationId)
             FormattedTravel(
                 travel.id,
                 Location(origin!!.longitude, origin.latitude),
@@ -93,9 +93,16 @@ class DetailsViewModel(
                 Location(destination!!.longitude, destination.longitude),
                 LocationAddress(destination.countryCode, destination.formattedAddress, destination.name),
                 travel.distance,
-                travel.duration
+                travel.duration,
+                travel.durationText
             )
         }
+    }
+
+    fun getPriceFromDistance(distance: Float): Float {
+        val wieght = distance / 1000F
+        if (wieght < 1) return 1000F
+        else return 1000F + (wieght - 1) * 100
     }
 
 
