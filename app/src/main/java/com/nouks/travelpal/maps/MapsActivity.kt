@@ -43,6 +43,7 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.nouks.travelpal.DetailsActivity
 import com.nouks.travelpal.R
 import com.nouks.travelpal.databinding.ActivityMapsBinding
 import com.nouks.travelpal.model.google.directions.Directions
@@ -56,6 +57,7 @@ import retrofit2.Response
 import java.io.IOException
 import java.util.*
 
+const val EXTRA_MESSAGE = "com.nouks.travelpal.maps.MESSAGE"
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private lateinit var map: GoogleMap
@@ -91,10 +93,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        startButton = findViewById(R.id.button_start)
-        val navController = Navigation.findNavController(this, R.id.nav_host_fragment)
-        Navigation.setViewNavController(startButton, navController)
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map)
                 as SupportMapFragment
         mapFragment.getMapAsync(this)
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -306,9 +305,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     override fun onStart() {
         super.onStart()
-        startButton.setOnClickListener {
-           it.findNavController().navigate(MapsActivityDirections.actionMapsActivityToDetailsActivity())
-        }
     }
 
     override fun onPause() {
@@ -504,5 +500,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val wieght = distance / 1000F
         if (wieght < 1) return 1000F
         else return 1000F + (wieght - 1) * 100
+    }
+
+    fun sendMessage(veiw: View) {
+        val intent = Intent(this, DetailsActivity::class.java).apply {
+            putExtra(EXTRA_MESSAGE, 20)
+        }
+        startActivity(intent)
     }
 }
