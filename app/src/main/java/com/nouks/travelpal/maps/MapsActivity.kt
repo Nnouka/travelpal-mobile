@@ -10,7 +10,6 @@ import android.content.res.Resources
 import android.graphics.BitmapFactory
 import android.location.Address
 import android.location.Geocoder
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -24,10 +23,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.navigation.Navigation
-import androidx.navigation.Navigation.findNavController
-import androidx.navigation.findNavController
-import androidx.navigation.ui.NavigationUI
+import androidx.lifecycle.ViewModelProviders
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.common.api.ResolvableApiException
@@ -43,10 +39,11 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
-import com.nouks.travelpal.DetailsActivity
+import com.nouks.travelpal.details.DetailsActivity
 import com.nouks.travelpal.R
-import com.nouks.travelpal.databinding.ActivityMapsBinding
+import com.nouks.travelpal.database.TravelDatabase
 import com.nouks.travelpal.model.google.directions.Directions
+import com.nouks.travelpal.model.google.nearbySearch.Location
 import com.nouks.travelpal.model.others.LocationAddress
 import com.nouks.travelpal.model.others.Route
 import kotlinx.android.synthetic.main.activity_maps.*
@@ -73,10 +70,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private var mapReadyState = false // vm
     private var distance = 0 // vm
     private var duration = "" // vm
+    private var durationLong = 0L
     private lateinit var apiKey: String
     private lateinit var lastAddress: LocationAddress // vm
+    private lateinit var lastDAddress: LocationAddress
     private lateinit var mMapsController: MapsController
-    private lateinit var startButton: View
+    private lateinit var mapViewModel: MapViewModel
     companion object {
         val ZOOM_WORLD = 1f
         val ZOOM_CONTINENT = 5f
@@ -96,12 +95,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map)
                 as SupportMapFragment
         mapFragment.getMapAsync(this)
+        val application = getApplication()
+
+        val dataSource = TravelDatabase.getInstance(application).travelDatabaseDao
+
+        val viewModelFactory = MapViewModelFactory(dataSource, application)
+        mapViewModel =
+            ViewModelProviders.of(
+                this, viewModelFactory).get(MapViewModel::class.java)
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(p0: LocationResult?) {
                 super.onLocationResult(p0)
                 if (p0 !== null) {
-                    lastLocation = p0.lastLocation
+                    lastLocation = Location(p0.lastLocation.longitude, p0.lastLocation.latitude)
 //                    placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
                 }
             }
@@ -176,8 +183,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 // TODO: Get info about the selected place.
                 Log.i(TAG, "Place: ${place.name}, ${place.id}, ${place.latLng}")
                 var latLng = place.latLng as LatLng
-                if (!current) lastOrigin = latLng
+                if (!current) {
+                    lastOrigin = latLng
+                    lastDAddress = lastAddress
+                    lastAddress = LocationAddress(lastAddress.countryCode, place.name.toString(), place.id.toString())
+                    lastDestination = LatLng(lastLocation.lat, lastLocation.lng)
 
+                } else {
+                    lastDestination = latLng
+                    lastDAddress = LocationAddress(lastAddress.countryCode, place.name.toString(), place.id.toString())
+                    lastOrigin = LatLng(lastLocation.lat, lastLocation.lng)
+                }
 //                Log.i(TAG, getString(R.string.location_query_id, lastAddress.countryCode))
                 if (mapReadyState) {
                     if (current) autoCompleteFragment.setText(lastAddress.formattedAddress)
@@ -186,7 +202,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             R.string.location_query_text, latLng.latitude, latLng.longitude),
                             getString(R.string.location_query_text, lastOrigin.latitude, lastOrigin.longitude), apiKey)
                         else -> RetrofitClient.googleMethods().getDirections(getString(
-                            R.string.location_query_text, lastLocation.latitude, lastLocation.longitude),
+                            R.string.location_query_text, lastLocation.lat, lastLocation.lng),
                             getString(R.string.location_query_text, latLng.latitude, latLng.longitude), apiKey)
                     }
 
@@ -204,6 +220,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                                 mMapsController.setMarkersAndRoute(route)
                                 distance = legs.distance.value
                                 duration = legs.duration.text
+                                durationLong = legs.duration.value.toLong()
                                 duration_distance_text.text = getString(R.string.duration_distance, duration, "${(distance / 1000)} Km")
                                 price_text.text = getString(R.string.price_string, getPriceFromDistance(distance.toFloat()).toString())
                                 button_panel_layout.visibility = View.VISIBLE
@@ -387,7 +404,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         fusedLocationProviderClient.lastLocation.addOnSuccessListener{
                 location ->
             if (location != null) {
-                lastLocation = location
+                lastLocation = Location(location.longitude, location.latitude)
                 val currentLatLng = LatLng(location.latitude, location.longitude)
                 lastOrigin = currentLatLng
                 lastAddress = getAddress(currentLatLng)
@@ -400,7 +417,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     }
 
     private fun setUpMap() {
-        val currentLatLng = LatLng(lastLocation.latitude, lastLocation.longitude)
+        val currentLatLng = LatLng(lastLocation.lat, lastLocation.lng)
         placeMarkerOnMap(currentLatLng,
             R.mipmap.ic_user_location, lastAddress.formattedAddress)
     }
@@ -503,9 +520,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     }
 
     fun sendMessage(veiw: View) {
-        val intent = Intent(this, DetailsActivity::class.java).apply {
-            putExtra(EXTRA_MESSAGE, 20)
-        }
-        startActivity(intent)
+        mapViewModel.onStartTravel(
+            lastLocation, lastAddress,
+            Location(lastDestination.longitude, lastDestination.latitude), lastDAddress,
+            distance.toDouble(), durationLong
+        )
+
+        mapViewModel.travelInsertComplete.observe(this,  androidx.lifecycle.Observer {
+            complete ->
+                if (complete) {
+                    val intent = Intent(this, DetailsActivity::class.java).apply {
+                        putExtra(EXTRA_MESSAGE, mapViewModel.travelId)
+                    }
+                    startActivity(intent)
+                    mapViewModel.onNavigationComplete()
+                }
+        })
+
     }
 }

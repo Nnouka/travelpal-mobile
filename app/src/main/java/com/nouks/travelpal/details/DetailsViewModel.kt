@@ -1,4 +1,4 @@
-package com.nouks.travelpal.maps
+package com.nouks.travelpal.details
 
 import android.app.Application
 import android.util.Log
@@ -13,23 +13,18 @@ import com.nouks.travelpal.database.entities.Travel
 import com.nouks.travelpal.model.google.directions.Distance
 import com.nouks.travelpal.model.google.directions.Duration
 import com.nouks.travelpal.model.google.nearbySearch.Location
+import com.nouks.travelpal.model.others.FormattedTravel
 import com.nouks.travelpal.model.others.LocationAddress
 import kotlinx.coroutines.*
 
 enum class GoogleApiStatus { LOADING, ERROR, DONE }
 enum class LocationName {CURRENT, ORIGIN, DESTINATION}
-class MapViewModel(
+class DetailsViewModel(
     val database: TravelDatabaseDao,
     application: Application
 ): AndroidViewModel(application) {
 
     val TAG = "MapViewModel"
-    private val _travelInsertComplete = MutableLiveData<Boolean>()
-    val travelInsertComplete: LiveData<Boolean>
-        get() = _travelInsertComplete
-    private var _travelId = 0L
-    val travelId: Long
-        get() = _travelId
 
     // The internal MutableLiveData that stores the status of the most recent request
     private val _status = MutableLiveData<GoogleApiStatus>()
@@ -37,6 +32,11 @@ class MapViewModel(
     // The external immutable LiveData for the request status
     val status: LiveData<GoogleApiStatus>
         get() = _status
+
+    private val _travel = MutableLiveData<FormattedTravel> ()
+
+    val travel: LiveData<FormattedTravel>
+        get() = _travel
     // Create a Coroutine scope using a job to be able to cancel when needed
     private var viewModelJob = Job()
 
@@ -55,45 +55,10 @@ class MapViewModel(
         }
     }
 
-    fun onNavigationComplete() {
-        _travelInsertComplete.value = false
-    }
-
-    fun onStartTravel(oLocation: Location, oAddress: LocationAddress,
-                      dLocation: Location, dAddress: LocationAddress, distance: Double, duration: Long) {
+    fun onPreviewReady(id: Long) {
         uiScope.launch {
-            _travelInsertComplete.value = false
-            var oLocEntity : LocationEntity? = LocationEntity(
-                0L,
-                oAddress.formattedAddress,
-                oAddress.countryCode,
-                LocationName.ORIGIN.toString(),
-                oLocation.lat,
-                oLocation.lng
-            )
-            insertLocation(oLocEntity)
-            oLocEntity = getLocationByName(LocationName.ORIGIN.toString())
-            var dLocEntity : LocationEntity? = LocationEntity(
-                0L,
-                dAddress.formattedAddress,
-                dAddress.countryCode,
-                LocationName.DESTINATION.toString(),
-                dLocation.lat,
-                dLocation.lng
-            )
-            insertLocation(dLocEntity)
-            dLocEntity = getLocationByName(LocationName.ORIGIN.toString())
-
-            // insert Journey
-            val travel = Travel(
-                0L,
-                oLocEntity!!.id,
-                dLocEntity!!.id,
-                distance, duration
-            )
-
-            _travelId = insertTravel(travel)!!.id
-            _travelInsertComplete.value = true
+            val travel = getTravelById(id)
+            if (travel != null) _travel.value = travel
         }
     }
     private suspend fun getCurrentLocationFromDatabase(): LocationEntity? {
@@ -116,10 +81,20 @@ class MapViewModel(
         }
     }
 
-    private suspend fun insertTravel(travel: Travel): Travel? {
+    private suspend fun getTravelById(id: Long): FormattedTravel? {
         return withContext(Dispatchers.IO) {
-            database.insertTravel(travel)
-            database.getLatestTravel()
+           val travel = database.getTravel(id)
+            val origin = database.getLocationById(travel!!.originLocationId)
+            val destination = database.getLocationById(travel!!.destinationLocationId)
+            FormattedTravel(
+                travel.id,
+                Location(origin!!.longitude, origin.latitude),
+                LocationAddress(origin.countryCode, origin.formattedAddress, origin.name),
+                Location(destination!!.longitude, destination.longitude),
+                LocationAddress(destination.countryCode, destination.formattedAddress, destination.name),
+                travel.distance,
+                travel.duration
+            )
         }
     }
 

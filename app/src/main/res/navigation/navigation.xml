@@ -19,7 +19,7 @@
     </activity>
     <activity
         android:id="@+id/detailsActivity"
-        android:name="com.nouks.travelpal.DetailsActivity"
+        android:name="com.nouks.travelpal.details.DetailsActivity"
         android:label="activity_details"
         tools:layout="@layout/activity_details" />
     <activity
