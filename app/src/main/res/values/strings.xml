@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">travelpal</string>
+    <string name="title_activity_maps">Travel Pal</string>
+    <string name="normal_map">Normal Map</string>
+    <string name="hybrid_map">Hybrid Map</string>
+    <string name="satellite_map">Satellite Map</string>
+    <string name="terrain_map">Terrain Map</string>
+    <string name="dropped_pin">Dropped Pin</string>
+    <string name="address_text">"Name: %1$s \n Address: %2$s \n Timestamp: %3$tr"</string>
+    <string name="location_query_text">%1$f,%2$f</string>
+    <string name="location_query_id">place_id:%1$s</string>
+    <string name="start">Start</string>
+    <string name="reset">Reset</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_login">Sign in</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="duration_distance">%1$s (%2$s)</string>
+    <string name="price_string">%1$s FCFA</string>
+</resources>
