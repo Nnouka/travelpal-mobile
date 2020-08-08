@@ -4,15 +4,13 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.nouks.travelpal.database.entities.LocationEntity
-import com.nouks.travelpal.database.entities.Travel
-import com.nouks.travelpal.database.entities.User
+import com.nouks.travelpal.database.entities.*
 
 @Dao
 interface TravelDatabaseDao {
     // users
     @Insert
-    fun insertUser(user: User)
+    fun insertUser(user: User): Long?
 
     @Update
     fun updateUser(user: User)
@@ -20,9 +18,12 @@ interface TravelDatabaseDao {
     @Query("SELECT * from users WHERE id = :id")
     fun getUser(id: Long): User?
 
+    @Query("SELECT * FROM users ORDER BY id LIMIT 1")
+    fun getCurrentUser(): User?
+
     // locations
     @Insert
-    fun insertLocation(locationEntity: LocationEntity)
+    fun insertLocation(locationEntity: LocationEntity): Long?
 
     @Update
     fun updateLocation(locationEntity: LocationEntity)
@@ -35,7 +36,7 @@ interface TravelDatabaseDao {
 
     // Travel Data
     @Insert
-    fun insertTravel(travel: Travel)
+    fun insertTravel(travel: Travel): Long?
 
     @Update
     fun updateTravel(travel: Travel)
@@ -48,5 +49,14 @@ interface TravelDatabaseDao {
 
     @Query("SELECT * from locations ORDER BY id DESC LIMIT 1")
     fun getLatestLocation(): LocationEntity?
+
+    @Query("SELECT * FROM app_states WHERE name = :name LIMIT 1")
+    fun getAutoCompleteUsageState(name: String): AppState?
+
+    @Insert
+    fun setAutoCompleteUsageState(appState: AppState)
+
+    @Update
+    fun updateAutoCompleteUsageState(appState: AppState)
 
 }

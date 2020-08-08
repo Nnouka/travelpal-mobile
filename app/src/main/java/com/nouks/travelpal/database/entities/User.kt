@@ -16,9 +16,9 @@ data class User (
     @ColumnInfo(name = "roles")
     var roles: String = "USER",
     @ColumnInfo(name = "token")
-    var token: String,
+    var token: String? = null,
     @ColumnInfo(name = "expiresAt")
     var tokenExpAt: Long = 0L,
     @ColumnInfo(name = "refresh_token")
-    var refreshToken: String
+    var refreshToken: String? = null
 )

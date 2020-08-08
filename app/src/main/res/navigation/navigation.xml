@@ -2,29 +2,12 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/navigation_host"
-    android:label="@string/app_name"
-    app:startDestination="@id/mapsActivity">
+    android:id="@+id/navigation"
+    app:startDestination="@id/loginFragment">
 
-    <activity
-        android:id="@+id/mapsActivity"
-        android:name="com.nouks.travelpal.maps.MapsActivity"
-        android:label="MapsActivity" >
-        <action
-            android:id="@+id/action_mapsActivity_to_detailsActivity"
-            app:destination="@id/detailsActivity" />
-        <action
-            android:id="@+id/action_mapsActivity_to_loginActivity"
-            app:destination="@id/loginActivity" />
-    </activity>
-    <activity
-        android:id="@+id/detailsActivity"
-        android:name="com.nouks.travelpal.details.DetailsActivity"
-        android:label="activity_details"
-        tools:layout="@layout/activity_details" />
-    <activity
-        android:id="@+id/loginActivity"
-        android:name="com.nouks.travelpal.ui.login.LoginActivity"
-        android:label="activity_login"
-        tools:layout="@layout/activity_login" />
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.nouks.travelpal.login.navigation.LoginFragment"
+        android:label="fragment_signup"
+        tools:layout="@layout/fragment_signup" />
 </navigation>

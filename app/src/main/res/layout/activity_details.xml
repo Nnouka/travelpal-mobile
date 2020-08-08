@@ -45,7 +45,7 @@
                     android:layout_marginEnd="16dp"
                     android:layout_marginRight="16dp"
                     android:layout_weight="1"
-                    android:text="@string/origin_detials_text"
+                    android:text="@string/origin_details_text"
                     android:textSize="18sp" />
             </LinearLayout>
 
@@ -70,7 +70,7 @@
                     android:layout_marginEnd="16dp"
                     android:layout_marginRight="16dp"
                     android:layout_weight="1"
-                    android:text="@string/origin_detials_text"
+                    android:text="@string/origin_details_text"
                     android:textSize="18sp" />
             </LinearLayout>
 
@@ -87,7 +87,7 @@
                     android:layout_marginEnd="16dp"
                     android:layout_marginRight="16dp"
                     android:layout_weight="1"
-                    android:text="@string/origin_detials_text"
+                    android:text="@string/origin_details_text"
                     android:textSize="18sp" />
 
                 <TextView
@@ -98,7 +98,7 @@
                     android:layout_marginEnd="16dp"
                     android:layout_marginRight="16dp"
                     android:layout_weight="1"
-                    android:text="@string/origin_detials_text"
+                    android:text="@string/origin_details_text"
                     android:textSize="18sp" />
             </LinearLayout>
 

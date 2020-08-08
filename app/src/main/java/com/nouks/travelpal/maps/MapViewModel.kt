@@ -1,23 +1,22 @@
 package com.nouks.travelpal.maps
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.google.android.gms.maps.model.LatLng
 import com.nouks.travelpal.database.TravelDatabaseDao
+import com.nouks.travelpal.database.entities.AppState
 import com.nouks.travelpal.database.entities.LocationEntity
 import com.nouks.travelpal.database.entities.Travel
-import com.nouks.travelpal.model.google.directions.Distance
-import com.nouks.travelpal.model.google.directions.Duration
+import com.nouks.travelpal.database.entities.User
 import com.nouks.travelpal.model.google.nearbySearch.Location
 import com.nouks.travelpal.model.others.LocationAddress
 import kotlinx.coroutines.*
 
 enum class GoogleApiStatus { LOADING, ERROR, DONE }
 enum class LocationName {CURRENT, ORIGIN, DESTINATION}
+enum class AppStates {AUTOCOMPLETE}
 class MapViewModel(
     val database: TravelDatabaseDao,
     application: Application
@@ -30,7 +29,22 @@ class MapViewModel(
     private var _travelId = 0L
     val travelId: Long
         get() = _travelId
+    private var _currentLocationSet = MutableLiveData<Boolean>()
+    val currentLocationSet: LiveData<Boolean>
+        get() = _currentLocationSet
+    private var _autoPromptLogin = MutableLiveData<Boolean>()
+    val autoPrompLogin: LiveData<Boolean>
+        get() = _autoPromptLogin
+    private var _currentUser = MutableLiveData<User?>()
+    val currentUser: LiveData<User?>
+        get() = _currentUser
+    private var _autoCompleteUsed = MutableLiveData<Boolean>()
+    val autoCompleteUsed: LiveData<Boolean>
+        get() = _autoCompleteUsed
 
+    private var _isUserAuthed = MutableLiveData<Boolean>()
+    val isUserAuthed: LiveData<Boolean>
+        get() = _isUserAuthed
     // The internal MutableLiveData that stores the status of the most recent request
     private val _status = MutableLiveData<GoogleApiStatus>()
 
@@ -46,12 +60,20 @@ class MapViewModel(
     private var currentLocation = MutableLiveData<LocationEntity?>()
 
     init {
-        initializeCurrentLocation()
+        initializeAppStates()
     }
 
-    private fun initializeCurrentLocation() {
+    private fun initializeAppStates() {
         uiScope.launch{
-            currentLocation.value = getCurrentLocationFromDatabase()
+            _autoCompleteUsed.value = isAutoCompleteUsed()
+            _currentUser.value = getCurrentUser()
+            _isUserAuthed.value = (_currentUser.value != null && _currentUser.value?.token != null)
+        }
+    }
+
+    fun onPlacesSelected() {
+        uiScope.launch {
+            setAutoCompleteUsed()
         }
     }
 
@@ -60,7 +82,8 @@ class MapViewModel(
     }
 
     fun onStartTravel(oLocation: Location, oAddress: LocationAddress,
-                      dLocation: Location, dAddress: LocationAddress, distance: Double, duration: Long, durationText: String) {
+                      dLocation: Location, dAddress: LocationAddress,
+                      distance: Double, duration: Long, durationText: String, price: Double) {
         uiScope.launch {
             _travelInsertComplete.value = false
             var oLocEntity : LocationEntity? = LocationEntity(
@@ -89,11 +112,17 @@ class MapViewModel(
                 0L,
                 oLocEntity!!.id,
                 dLocEntity!!.id,
-                distance, duration, durationText
+                distance, duration, durationText,
+                price
             )
 
-            _travelId = insertTravel(travel)!!.id
+            _travelId = insertTravel(travel)!!
+
+            if (_autoCompleteUsed.value == null || _autoCompleteUsed.value != true) {
+               _autoCompleteUsed.value = setAutoCompleteUsed()
+            }
             _travelInsertComplete.value = true
+
         }
     }
     private suspend fun getCurrentLocationFromDatabase(): LocationEntity? {
@@ -121,13 +150,35 @@ class MapViewModel(
             database.getLatestLocation()
         }
     }
-    private suspend fun insertTravel(travel: Travel): Travel? {
+    private suspend fun insertTravel(travel: Travel): Long? {
         return withContext(Dispatchers.IO) {
             database.insertTravel(travel)
-            database.getLatestTravel()
         }
     }
 
+    private suspend fun getCurrentUser(): User? {
+        return withContext(Dispatchers.IO) {
+            database.getCurrentUser()
+        }
+    }
+
+    private suspend fun isAutoCompleteUsed(): Boolean {
+        return withContext(Dispatchers.IO) {
+            database.getAutoCompleteUsageState(AppStates.AUTOCOMPLETE.toString()) != null
+        }
+    }
+
+    private suspend fun setAutoCompleteUsed(): Boolean {
+        return withContext(Dispatchers.IO) {
+            database.setAutoCompleteUsageState(
+                AppState(
+                0L,
+                AppStates.AUTOCOMPLETE.toString(),
+                    true.toString()
+            ))
+            true
+        }
+    }
 
     /**
      * When the [ViewModel] is finished, we cancel our coroutine [viewModelJob], which tells the

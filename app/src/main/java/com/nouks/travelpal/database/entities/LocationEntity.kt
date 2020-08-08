@@ -18,5 +18,4 @@ data class LocationEntity(
     var latitude: Double,
     @ColumnInfo(name = "longitude")
     var longitude: Double
-
 )
