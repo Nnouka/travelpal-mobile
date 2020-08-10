@@ -1,10 +1,15 @@
 package com.nouks.travelpal.maps
 
 import android.app.Application
+import android.content.Context
+import android.util.Log
+import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.nouks.travelpal.api.travelpal.dto.TravelIntentRequest
 import com.nouks.travelpal.database.TravelDatabaseDao
 import com.nouks.travelpal.database.entities.AppState
 import com.nouks.travelpal.database.entities.LocationEntity
@@ -13,13 +18,18 @@ import com.nouks.travelpal.database.entities.User
 import com.nouks.travelpal.model.google.nearbySearch.Location
 import com.nouks.travelpal.model.others.LocationAddress
 import kotlinx.coroutines.*
+import liuuu.laurence.maputility.api.RetrofitClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 enum class GoogleApiStatus { LOADING, ERROR, DONE }
 enum class LocationName {CURRENT, ORIGIN, DESTINATION}
 enum class AppStates {AUTOCOMPLETE}
 class MapViewModel(
     val database: TravelDatabaseDao,
-    application: Application
+    application: Application,
+    val authed: Boolean = false
 ): AndroidViewModel(application) {
 
     val TAG = "MapViewModel"
@@ -67,7 +77,7 @@ class MapViewModel(
         uiScope.launch{
             _autoCompleteUsed.value = isAutoCompleteUsed()
             _currentUser.value = getCurrentUser()
-            _isUserAuthed.value = (_currentUser.value != null && _currentUser.value?.token != null)
+            _isUserAuthed.value = authed || (_currentUser.value != null && _currentUser.value?.token != null)
         }
     }
 
@@ -158,7 +168,11 @@ class MapViewModel(
 
     private suspend fun getCurrentUser(): User? {
         return withContext(Dispatchers.IO) {
-            database.getCurrentUser()
+           val user = database.getCurrentUser()
+            if(user != null) {
+                Log.i("MapViewModel", user.token.toString())
+            }
+            user
         }
     }
 

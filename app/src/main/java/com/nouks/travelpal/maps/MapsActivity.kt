@@ -70,6 +70,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var locationRequest: LocationRequest
     private var locationUpdateState = false // vm
     private var mapReadyState = false // vm
+    private var authMessage = false
     private var distance = 0 // vm
     private var duration = "" // vm
     private var durationLong = 0L
@@ -97,11 +98,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map)
                 as SupportMapFragment
         mapFragment.getMapAsync(this)
+        authMessage = intent.getBooleanExtra(EXTRA_MESSAGE, false)
         val application = getApplication()
 
         val dataSource = TravelDatabase.getInstance(application).travelDatabaseDao
 
-        val viewModelFactory = MapViewModelFactory(dataSource, application)
+        val viewModelFactory = MapViewModelFactory(dataSource, application, authMessage)
         mapViewModel =
             ViewModelProviders.of(
                 this, viewModelFactory).get(MapViewModel::class.java)
@@ -183,7 +185,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 mapViewModel.isUserAuthed.observe(this@MapsActivity, androidx.lifecycle.Observer {
                     authed ->
                     Log.i(TAG, authed.toString())
-                    if (authed) {
+                    if (authMessage || authed) {
                             onPlacesWillSelect(place, autoCompleteFragment, current)
                     } else {
                         mapViewModel.autoCompleteUsed.observe(this@MapsActivity, androidx.lifecycle.Observer {

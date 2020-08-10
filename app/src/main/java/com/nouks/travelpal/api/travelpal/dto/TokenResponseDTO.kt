@@ -6,6 +6,7 @@ data class TokenResponseDTO(
     val header: String,
     val issuer: String,
     val accessToken: String,
+    val refreshToken: String,
     val type: String,
     val expiresAt: Long
 )

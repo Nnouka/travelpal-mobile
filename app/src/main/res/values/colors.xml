@@ -6,4 +6,5 @@
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
     <color name="semi_gray">#80A0A0A0</color>
+    <color name="edit_highlight">#4CAF50</color>
 </resources>

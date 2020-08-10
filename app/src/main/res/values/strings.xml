@@ -14,6 +14,9 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="title_login">Me</string>
+    <string name="full_name_hint">Full Name</string>
+    <string name="am_driver">Driver?</string>
+    <string name="current_location_update">Update Current Location</string>
     <string name="title_activity_login">Sign in</string>
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>

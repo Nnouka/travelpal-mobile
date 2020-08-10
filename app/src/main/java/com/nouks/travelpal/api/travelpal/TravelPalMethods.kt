@@ -1,9 +1,6 @@
 package com.nouks.travelpal.api.travelpal
 
-import com.nouks.travelpal.api.travelpal.dto.LoginDTO
-import com.nouks.travelpal.api.travelpal.dto.RegisterUserRequest
-import com.nouks.travelpal.api.travelpal.dto.RegisterUserResponse
-import com.nouks.travelpal.api.travelpal.dto.TokenResponseDTO
+import com.nouks.travelpal.api.travelpal.dto.*
 import com.nouks.travelpal.model.google.directions.Directions
 import com.nouks.travelpal.model.google.nearbySearch.NearbySearch
 import retrofit2.Call
@@ -16,4 +13,8 @@ interface TravelPalMethods {
 
     @POST("public/user/register")
     fun registerUser(@HeaderMap headerMap: Map<String, String>, @Body user: RegisterUserRequest): Call<RegisterUserResponse>
+
+    @POST("protected/user/intent/travel")
+    fun registerTravelIntent(@HeaderMap headerMap: Map<String, String>, @Body travelIntent: TravelIntentRequest): Call<String>
+
 }

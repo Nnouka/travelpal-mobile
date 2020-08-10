@@ -1,21 +1,29 @@
 package com.nouks.travelpal.details
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
+import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.google.android.gms.maps.model.LatLng
+import com.nouks.travelpal.api.travelpal.dto.LoginDTO
+import com.nouks.travelpal.api.travelpal.dto.TokenResponseDTO
+import com.nouks.travelpal.api.travelpal.dto.TravelIntentRequest
 import com.nouks.travelpal.database.TravelDatabaseDao
 import com.nouks.travelpal.database.entities.LocationEntity
-import com.nouks.travelpal.database.entities.Travel
-import com.nouks.travelpal.model.google.directions.Distance
-import com.nouks.travelpal.model.google.directions.Duration
+import com.nouks.travelpal.database.entities.User
+import com.nouks.travelpal.login.navigation.LoginResult
 import com.nouks.travelpal.model.google.nearbySearch.Location
 import com.nouks.travelpal.model.others.FormattedTravel
 import com.nouks.travelpal.model.others.LocationAddress
 import kotlinx.coroutines.*
+import liuuu.laurence.maputility.api.RetrofitClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 enum class GoogleApiStatus { LOADING, ERROR, DONE }
 enum class LocationName {CURRENT, ORIGIN, DESTINATION}
@@ -37,6 +45,14 @@ class DetailsViewModel(
 
     val travel: LiveData<FormattedTravel>
         get() = _travel
+
+    private var _currentUser = MutableLiveData<User?>()
+    val currentUser: LiveData<User?>
+        get() = _currentUser
+
+    private var _intentRegistered = MutableLiveData<Boolean>()
+    val intentRegistered: LiveData<Boolean>
+        get() = _intentRegistered
     // Create a Coroutine scope using a job to be able to cancel when needed
     private var viewModelJob = Job()
 
@@ -46,12 +62,13 @@ class DetailsViewModel(
     private var currentLocation = MutableLiveData<LocationEntity?>()
 
     init {
-        initializeCurrentLocation()
+        initialize()
     }
 
-    private fun initializeCurrentLocation() {
+    private fun initialize() {
         uiScope.launch{
             currentLocation.value = getCurrentLocationFromDatabase()
+            _currentUser.value = getCurrentUser()
         }
     }
 
@@ -59,6 +76,49 @@ class DetailsViewModel(
         uiScope.launch {
             val travel = getTravelById(id)
             if (travel != null) _travel.value = travel
+        }
+    }
+
+    fun registerTravelIntent(travelIntentRequest: TravelIntentRequest,
+              clientAuth: String, userToken: String, progressLayout: View, context: Context?) {
+        // call api for registration of travel intent
+        progressLayout.visibility = View.VISIBLE
+        val autheader = HashMap<String, String>()
+        autheader.put("X-Api-Auth", clientAuth.trim())
+        autheader.put("Authorization", userToken.trim())
+        val resultCall = RetrofitClient.travelpalMethods().registerTravelIntent(
+            autheader, travelIntentRequest
+        )
+
+        resultCall.enqueue(object : Callback<String> {
+            override fun onResponse(
+                call: Call<String>,
+                response: Response<String>
+            ) {
+                if (response.isSuccessful) {
+                    Toast.makeText(context, "Booking Successful", Toast.LENGTH_LONG).show()
+                    _intentRegistered.value = true
+                } else {
+                    Log.i("SignUpViewModel", response.message())
+                    Toast.makeText(context, response.message(), Toast.LENGTH_SHORT).show()
+                }
+                progressLayout.visibility = View.GONE
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                Toast.makeText(context, t.toString(), Toast.LENGTH_SHORT).show()
+                Log.i("SignUpViewModel", t.toString())
+                progressLayout.visibility = View.GONE
+            }
+        })
+    }
+    private suspend fun getCurrentUser(): User? {
+        return withContext(Dispatchers.IO) {
+            val user = database.getCurrentUser()
+            if(user != null) {
+                Log.i("MapViewModel", user.token.toString())
+            }
+            user
         }
     }
     private suspend fun getCurrentLocationFromDatabase(): LocationEntity? {

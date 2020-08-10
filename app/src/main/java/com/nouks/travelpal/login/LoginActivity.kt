@@ -7,7 +7,7 @@ import androidx.viewpager.widget.ViewPager
 import com.google.android.material.tabs.TabItem
 import com.google.android.material.tabs.TabLayout
 import com.nouks.travelpal.R
-
+const val TAG = "LoginActivity";
 class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,7 +20,7 @@ class LoginActivity : AppCompatActivity() {
         val pagerAdapter: LoginPagerAdapter = LoginPagerAdapter(supportFragmentManager)
         loginPager!!.adapter = pagerAdapter
 
-        Log.i("LoginActivity", "View Created")
+        Log.i(TAG, "View Created")
 
         loginPager.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
 
