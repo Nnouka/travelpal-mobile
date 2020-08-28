@@ -88,8 +88,8 @@ class LoginFragment : Fragment() {
                 if (user != null) {
                     loginViewModel.login(
                         LoginDTO(
-                            email.text.toString(),
-                            password.text.toString()
+                            user.email,
+                            user.email
                         ),
                         clientHeader,
                         progressLayout,
