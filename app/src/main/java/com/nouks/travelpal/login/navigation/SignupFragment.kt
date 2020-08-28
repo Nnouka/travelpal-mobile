@@ -15,12 +15,13 @@ import androidx.lifecycle.ViewModelProviders
 
 import com.nouks.travelpal.R
 import com.nouks.travelpal.api.travelpal.AuthService
+import com.nouks.travelpal.api.travelpal.dto.LoginDTO
 import com.nouks.travelpal.api.travelpal.dto.RegisterUserRequest
 import com.nouks.travelpal.database.TravelDatabase
-import com.nouks.travelpal.database.TravelDatabaseDao
 import com.nouks.travelpal.databinding.FragmentSignupBinding
 import com.nouks.travelpal.login.LoginActivity
 import com.nouks.travelpal.maps.EXTRA_MESSAGE
+import com.nouks.travelpal.maps.MapsActivity
 
 /**
  * A simple [Fragment] subclass.
@@ -28,7 +29,9 @@ import com.nouks.travelpal.maps.EXTRA_MESSAGE
 class SignupFragment : Fragment() {
 
     lateinit var signUpViewModel: SignUpViewModel
+    lateinit var loginViewModel: LoginViewModel
     lateinit var authService: AuthService
+    var anonymously = false;
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -48,8 +51,12 @@ class SignupFragment : Fragment() {
         signUpViewModel = ViewModelProviders.of(
             this, viewModelFactory
         ).get(SignUpViewModel::class.java)
-        Log.i("SignupFragment", "Signup Created")
+        val loginViewModelFactory = LoginViewModelFactory(dataSource, application)
+        loginViewModel = ViewModelProviders.of(
+            this, loginViewModelFactory
+        ).get(LoginViewModel::class.java)
         val signUpButton = binding.buttonSignUp
+        val anonymousButton = binding.buttonSkipSignup
 
         val clientHeader = authService.generateClientAuthHeader(
             getString(R.string.client_id), getString(R.string.client_secret)
@@ -61,7 +68,9 @@ class SignupFragment : Fragment() {
         val driver = binding.driverCheck
         val progressLayout = binding.loading
         signUpButton.isEnabled = true
+        anonymousButton.isEnabled = true
         signUpButton.setOnClickListener {
+            anonymously = false
             signUpViewModel.signUpFormState.observe(viewLifecycleOwner, Observer {
                     state ->
                 if (state.isDataValid) {
@@ -80,12 +89,60 @@ class SignupFragment : Fragment() {
                 }
             })
         }
-        signUpViewModel.signUpResult.observe(viewLifecycleOwner, Observer {
-            result -> if (result.success != null) {
-                    Toast.makeText(context, "Registration successful, please login", Toast.LENGTH_LONG).show()
+
+        anonymousButton.setOnClickListener {
+            anonymously = true
+            signUpViewModel.signUpFormState.observe(viewLifecycleOwner, Observer {
+                    state ->
+                if (state.isDataValid) {
+                    signUpViewModel.registerAppInstance(
+                        clientHeader,
+                        progressLayout,
+                        context
+                    )
+                }
+            })
+
+            signUpViewModel.signUpResult.observe(viewLifecycleOwner, Observer {
+                    result ->
+                if (result.success != null) {
+                if (anonymously) {
+                    Toast.makeText(context, "Registration successful, Authenticating... Please wait...", Toast.LENGTH_LONG).show()
+                    signUpViewModel.userUpdated.observe(viewLifecycleOwner, Observer {
+                            updated ->
+                        if (updated) {
+                            signUpViewModel.refreshCurrentUser()
+                            signUpViewModel.currentUser.observe(viewLifecycleOwner, Observer {
+                                    user -> if (user != null) {
+                                loginViewModel.login(
+                                    LoginDTO(
+                                        user.email,
+                                        user.email
+                                    ),
+                                    clientHeader,
+                                    progressLayout,
+                                    context
+                                )
+                            }
+                            })
+                        }
+                    })
+                    anonymously = false
+                } else {
+                    Toast.makeText(context, "Registration successful, Please sign in", Toast.LENGTH_LONG).show()
+                    anonymously = true
                     promptSignin()
                 }
-        })
+            }
+            })
+
+            loginViewModel.loginResult.observe(viewLifecycleOwner, Observer {
+                    result ->
+                if (result.success != null) {
+                    startMaps()
+                }
+            })
+        }
         return binding.root
     }
 
@@ -93,6 +150,14 @@ class SignupFragment : Fragment() {
 
         val intent = Intent(context, LoginActivity::class.java).apply {
             putExtra(EXTRA_MESSAGE, 1)
+        }
+        startActivity(intent)
+    }
+
+    fun startMaps() {
+
+        val intent = Intent(context, MapsActivity::class.java).apply {
+            putExtra(EXTRA_MESSAGE, true)
         }
         startActivity(intent)
     }

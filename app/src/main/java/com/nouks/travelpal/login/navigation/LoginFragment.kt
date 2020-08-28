@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -28,6 +29,7 @@ import com.nouks.travelpal.maps.MapsActivity
 class LoginFragment : Fragment() {
 
     lateinit var loginViewModel: LoginViewModel
+    lateinit var signUpViewModel: SignUpViewModel
     lateinit var authService: AuthService
 
     override fun onCreateView(
@@ -48,7 +50,13 @@ class LoginFragment : Fragment() {
         loginViewModel = ViewModelProviders.of(
             this, viewModelFactory
         ).get(LoginViewModel::class.java)
+
+        val signUpViewModelFactory = SignUpViewModelFactory(dataSource,application)
+        signUpViewModel = ViewModelProviders.of(
+            this, signUpViewModelFactory
+        ).get(SignUpViewModel::class.java)
         val loginButton = binding.login
+        val skipLoginButton = binding.buttonSkipLogin
         val clientHeader = authService.generateClientAuthHeader(
             getString(R.string.client_id), getString(R.string.client_secret)
         )
@@ -56,7 +64,7 @@ class LoginFragment : Fragment() {
         val password = binding.password
         val progressLayout = binding.loading
         loginButton.isEnabled = true
-
+        skipLoginButton.isEnabled = true
         loginButton.setOnClickListener {
             loginViewModel.loginFormState.observe(viewLifecycleOwner, Observer {
                 state ->
@@ -70,6 +78,62 @@ class LoginFragment : Fragment() {
                         progressLayout,
                         context
                     )
+                }
+            })
+        }
+
+        skipLoginButton.setOnClickListener{
+           loginViewModel.currentUser.observe(viewLifecycleOwner, Observer {
+               user ->
+                if (user != null) {
+                    loginViewModel.login(
+                        LoginDTO(
+                            email.text.toString(),
+                            password.text.toString()
+                        ),
+                        clientHeader,
+                        progressLayout,
+                        context
+                    )
+                } else {
+                    signUpViewModel.registerAppInstance(
+                        clientHeader,
+                        progressLayout,
+                        context
+                    )
+                }
+           })
+
+            signUpViewModel.signUpResult.observe(viewLifecycleOwner, Observer {
+                    result ->
+                if (result.success != null) {
+                    Toast.makeText(context, "Registration successful, Authenticating... Please wait...", Toast.LENGTH_LONG).show()
+                    signUpViewModel.userUpdated.observe(viewLifecycleOwner, Observer {
+                            updated ->
+                        if (updated) {
+                            signUpViewModel.refreshCurrentUser()
+                            signUpViewModel.currentUser.observe(viewLifecycleOwner, Observer {
+                                    user -> if (user != null) {
+                                loginViewModel.login(
+                                    LoginDTO(
+                                        user.email,
+                                        user.email
+                                    ),
+                                    clientHeader,
+                                    progressLayout,
+                                    context
+                                )
+                            }
+                            })
+                        }
+                    })
+                }
+            })
+
+            loginViewModel.loginResult.observe(viewLifecycleOwner, Observer {
+                    result ->
+                if (result.success != null) {
+                    startMaps()
                 }
             })
         }

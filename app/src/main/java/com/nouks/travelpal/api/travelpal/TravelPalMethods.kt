@@ -14,6 +14,9 @@ interface TravelPalMethods {
     @POST("public/user/register")
     fun registerUser(@HeaderMap headerMap: Map<String, String>, @Body user: RegisterUserRequest): Call<RegisterUserResponse>
 
+    @POST("public/app/register")
+    fun registerAppInstance(@HeaderMap headerMap: Map<String, String>): Call<RegisterUserResponse>
+
     @POST("protected/user/intent/travel")
     fun registerTravelIntent(@HeaderMap headerMap: Map<String, String>, @Body travelIntent: TravelIntentRequest): Call<String>
 

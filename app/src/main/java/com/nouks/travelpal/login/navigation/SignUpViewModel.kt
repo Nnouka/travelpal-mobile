@@ -13,6 +13,7 @@ import androidx.lifecycle.MutableLiveData
 import com.nouks.travelpal.R
 import com.nouks.travelpal.api.travelpal.dto.RegisterUserRequest
 import com.nouks.travelpal.api.travelpal.dto.RegisterUserResponse
+import com.nouks.travelpal.api.travelpal.dto.TokenResponseDTO
 import com.nouks.travelpal.database.TravelDatabaseDao
 import com.nouks.travelpal.database.entities.User
 import com.nouks.travelpal.maps.AppStates
@@ -34,6 +35,12 @@ class SignUpViewModel (
     private val _signUpResult = MutableLiveData<LoginResult>()
     val signUpResult: LiveData<LoginResult> = _signUpResult
 
+    private val _currentUser = MutableLiveData<User?>()
+    val currentUser: LiveData<User?> = _currentUser
+
+    private val _userUpdated = MutableLiveData<Boolean>()
+    val userUpdated: LiveData<Boolean> = _userUpdated
+
     // Create a Coroutine scope using a job to be able to cancel when needed
     private var viewModelJob = Job()
 
@@ -42,6 +49,8 @@ class SignUpViewModel (
 
     init {
         _signUpForm.value = SignUpFormState(null, null, true)
+        _userUpdated.value = false
+        _currentUser.value = null
     }
 
     fun register(registerUserRequest: RegisterUserRequest,
@@ -90,6 +99,50 @@ class SignUpViewModel (
         }*/
     }
 
+    fun registerAppInstance(clientAuth: String, progressLayout: View, context: Context?) {
+        // call api for registration
+        progressLayout.visibility = View.VISIBLE
+        val autheader = HashMap<String, String>()
+        autheader.put("X-Api-Auth", clientAuth.trim())
+        val resultCall = RetrofitClient.travelpalMethods().registerAppInstance(
+            autheader
+        )
+
+        resultCall.enqueue(object : Callback<RegisterUserResponse> {
+            override fun onResponse(
+                call: Call<RegisterUserResponse>,
+                response: Response<RegisterUserResponse>
+            ) {
+                if (response.isSuccessful) {
+                    val userResponse = response.body()!!
+                    Log.i("SignUpViewModel", userResponse.toString())
+                    uiScope.launch {
+                        _userUpdated.value = storeNewUser(userResponse)
+                        _signUpResult.value = LoginResult(1)
+                    }
+                } else {
+                    Log.i("SignUpViewModel", response.message())
+                    Toast.makeText(context, response.message(), Toast.LENGTH_SHORT).show()
+                }
+
+                progressLayout.visibility = View.GONE
+            }
+
+            override fun onFailure(call: Call<RegisterUserResponse>, t: Throwable) {
+                Toast.makeText(context, t.toString(), Toast.LENGTH_SHORT).show()
+                Log.i("SignUpViewModel", t.toString())
+                progressLayout.visibility = View.GONE
+            }
+        })
+
+        /*if (result is ) {
+            _signUpResult.value =
+                LoginResult(success = LoggedInUserView(displayName = result.data.displayName))
+        } else {
+            _signUpResult.value = LoginResult(error = R.string.login_failed)
+        }*/
+    }
+
     /*fun loginDataChanged(username: String, password: String) {
         if (!isUserNameValid(username)) {
             _signUpForm.value = LoginFormState(usernameError = R.string.invalid_username)
@@ -113,22 +166,41 @@ class SignUpViewModel (
     private fun isPasswordValid(password: String): Boolean {
         return password.length > 5
     }
-
     private suspend fun storeNewUser(userResponse: RegisterUserResponse): Boolean {
         var roles = ""
         userResponse.roles.forEach {
                 role -> roles += "$role," }
+
         return withContext(Dispatchers.IO) {
-            database.insertUser(User(
-                userResponse.userId,
-                userResponse.phone,
-                userResponse.email,
-                roles,
-                null,
-                0L,
-                null
-            ))
+            val user: User? = database.getCurrentUser()
+            if (user == null) {
+                database.insertUser(User(
+                    userResponse.userId,
+                    userResponse.phone ?: "",
+                    userResponse.email ?: "",
+                    roles,
+                    null,
+                    0L,
+                    null
+                ))
+            } else {
+                user.email = userResponse.email ?: ""
+                user.phoneNumber = userResponse.email ?: ""
+                database.updateUser(user)
+            }
             true
+        }
+    }
+
+    private suspend fun getCurrentUser(): User? {
+        return withContext(Dispatchers.IO) {
+            database.getCurrentUser()
+        }
+    }
+
+    fun refreshCurrentUser() {
+        uiScope.launch {
+            _currentUser.value = getCurrentUser()
         }
     }
 

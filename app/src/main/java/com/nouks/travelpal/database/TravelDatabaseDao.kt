@@ -21,6 +21,9 @@ interface TravelDatabaseDao {
     @Query("SELECT * FROM users ORDER BY id LIMIT 1")
     fun getCurrentUser(): User?
 
+    @Query("SELECT * FROM users")
+    fun getAllUsers(): List<User>
+
     // locations
     @Insert
     fun insertLocation(locationEntity: LocationEntity): Long?

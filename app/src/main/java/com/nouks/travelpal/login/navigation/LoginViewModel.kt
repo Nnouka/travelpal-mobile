@@ -35,6 +35,12 @@ class LoginViewModel (
     private val _loginResult = MutableLiveData<LoginResult>()
     val loginResult: LiveData<LoginResult> = _loginResult
 
+    private val _currentUser = MutableLiveData<User?>()
+    val currentUser: LiveData<User?> = _currentUser
+
+    private val _userUpdated = MutableLiveData<Boolean>()
+    val userUpdated: LiveData<Boolean> = _userUpdated
+
     // Create a Coroutine scope using a job to be able to cancel when needed
     private var viewModelJob = Job()
 
@@ -43,6 +49,9 @@ class LoginViewModel (
 
     init {
         _loginForm.value = SignUpFormState(null, null, true)
+        uiScope.launch {
+            _currentUser.value = getCurrentUser()
+        }
     }
 
     fun login(loginDTO: LoginDTO,
@@ -65,18 +74,18 @@ class LoginViewModel (
                     uiScope.launch {
                         storeToken(tokenResponse)
                     }
-                    Log.i("SignUpViewModel", tokenResponse.toString())
+                    Log.i("LoginViewModel", tokenResponse.toString())
                     _loginResult.value = LoginResult(1)
                 } else {
-                    Log.i("SignUpViewModel", response.message())
-                    Toast.makeText(context, response.message(), Toast.LENGTH_SHORT).show()
+                    Log.i("LoginViewModel", response.message())
+                    Toast.makeText(context, "${response.message()} You have an option to signUp anonymously too..", Toast.LENGTH_LONG).show()
                 }
                 progressLayout.visibility = View.GONE
             }
 
             override fun onFailure(call: Call<TokenResponseDTO>, t: Throwable) {
                 Toast.makeText(context, t.toString(), Toast.LENGTH_SHORT).show()
-                Log.i("SignUpViewModel", t.toString())
+                Log.i("LoginViewModel", t.toString())
                 progressLayout.visibility = View.GONE
             }
         })
@@ -136,6 +145,12 @@ class LoginViewModel (
             }
 
             true
+        }
+    }
+
+    private suspend fun getCurrentUser(): User? {
+        return withContext(Dispatchers.IO) {
+            database.getCurrentUser()
         }
     }
 
