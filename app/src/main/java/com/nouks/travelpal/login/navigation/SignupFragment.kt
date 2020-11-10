@@ -19,6 +19,7 @@ import com.nouks.travelpal.api.travelpal.dto.LoginDTO
 import com.nouks.travelpal.api.travelpal.dto.RegisterUserRequest
 import com.nouks.travelpal.database.TravelDatabase
 import com.nouks.travelpal.databinding.FragmentSignupBinding
+import com.nouks.travelpal.details.DetailsActivity
 import com.nouks.travelpal.login.LoginActivity
 import com.nouks.travelpal.maps.EXTRA_MESSAGE
 import com.nouks.travelpal.maps.MapsActivity
@@ -67,6 +68,7 @@ class SignupFragment : Fragment() {
         val password = binding.passwordSignUp
         val driver = binding.driverCheck
         val progressLayout = binding.loading
+        val message = requireActivity().intent.getLongExtra(EXTRA_MESSAGE, 0)
         signUpButton.isEnabled = true
         anonymousButton.isEnabled = true
         signUpButton.setOnClickListener {
@@ -139,7 +141,11 @@ class SignupFragment : Fragment() {
             loginViewModel.loginResult.observe(viewLifecycleOwner, Observer {
                     result ->
                 if (result.success != null) {
-                    startMaps()
+                    if (message != 0L) {
+                        startDetails(message)
+                    } else {
+                        startMaps()
+                    }
                 }
             })
         }
@@ -158,6 +164,14 @@ class SignupFragment : Fragment() {
 
         val intent = Intent(context, MapsActivity::class.java).apply {
             putExtra(EXTRA_MESSAGE, true)
+        }
+        startActivity(intent)
+    }
+
+    fun startDetails(intentVal: Long) {
+
+        val intent = Intent(context, DetailsActivity::class.java).apply {
+            putExtra(EXTRA_MESSAGE, intentVal)
         }
         startActivity(intent)
     }

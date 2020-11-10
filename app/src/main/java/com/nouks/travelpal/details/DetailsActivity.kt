@@ -12,6 +12,7 @@ import com.nouks.travelpal.R
 import com.nouks.travelpal.api.travelpal.AuthService
 import com.nouks.travelpal.api.travelpal.dto.TravelIntentRequest
 import com.nouks.travelpal.database.TravelDatabase
+import com.nouks.travelpal.login.LoginActivity
 import com.nouks.travelpal.maps.EXTRA_MESSAGE
 import com.nouks.travelpal.maps.MapsActivity
 import kotlinx.android.synthetic.main.activity_details.*
@@ -77,12 +78,25 @@ class DetailsActivity : AppCompatActivity() {
                     startMaps()
                 }
         })
+        detailsViewModel.unauthorized.observe(this, Observer {
+            unauthorized -> if (unauthorized) {
+                promptSignin(message)
+            }
+        })
     }
 
     fun startMaps() {
 
         val intent = Intent(this, MapsActivity::class.java).apply {
             putExtra(EXTRA_MESSAGE, true)
+        }
+        startActivity(intent)
+    }
+
+    fun promptSignin(travelId: Long) {
+
+        val intent = Intent(this, LoginActivity::class.java).apply {
+            putExtra(EXTRA_MESSAGE, travelId)
         }
         startActivity(intent)
     }

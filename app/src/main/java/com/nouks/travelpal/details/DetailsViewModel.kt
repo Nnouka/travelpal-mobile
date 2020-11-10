@@ -53,6 +53,9 @@ class DetailsViewModel(
     private var _intentRegistered = MutableLiveData<Boolean>()
     val intentRegistered: LiveData<Boolean>
         get() = _intentRegistered
+    private var _unauthorized = MutableLiveData<Boolean>()
+    val unauthorized: LiveData<Boolean>
+        get() = _unauthorized
     // Create a Coroutine scope using a job to be able to cancel when needed
     private var viewModelJob = Job()
 
@@ -97,10 +100,12 @@ class DetailsViewModel(
             ) {
                 if (response.isSuccessful) {
                     Toast.makeText(context, "Booking Successful", Toast.LENGTH_LONG).show()
+                    Log.i("SignUpViewModel", response.body().toString())
                     _intentRegistered.value = true
                 } else {
                     Log.i("SignUpViewModel", response.message())
                     Toast.makeText(context, response.message(), Toast.LENGTH_SHORT).show()
+                    _unauthorized.value = true
                 }
                 progressLayout.visibility = View.GONE
             }

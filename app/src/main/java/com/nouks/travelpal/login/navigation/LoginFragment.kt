@@ -3,6 +3,7 @@ package com.nouks.travelpal.login.navigation
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Message
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -65,6 +66,7 @@ class LoginFragment : Fragment() {
         val progressLayout = binding.loading
         loginButton.isEnabled = true
         skipLoginButton.isEnabled = true
+        val message = requireActivity().intent.getLongExtra(EXTRA_MESSAGE, 0)
         loginButton.setOnClickListener {
             loginViewModel.loginFormState.observe(viewLifecycleOwner, Observer {
                 state ->
@@ -133,7 +135,12 @@ class LoginFragment : Fragment() {
             loginViewModel.loginResult.observe(viewLifecycleOwner, Observer {
                     result ->
                 if (result.success != null) {
-                    startMaps()
+
+                    if (message != 0L) {
+                        startDetails(message)
+                    } else {
+                        startMaps()
+                    }
                 }
             })
         }
@@ -141,7 +148,11 @@ class LoginFragment : Fragment() {
         loginViewModel.loginResult.observe(viewLifecycleOwner, Observer {
             result ->
             if (result.success != null) {
-                     startMaps()
+                if (message != 0L) {
+                    startDetails(message)
+                } else {
+                    startMaps()
+                }
                 }
         })
         return binding.root
@@ -155,10 +166,10 @@ class LoginFragment : Fragment() {
         startActivity(intent)
     }
 
-    fun startDetails() {
+    fun startDetails(intentVal: Long) {
 
         val intent = Intent(context, DetailsActivity::class.java).apply {
-            putExtra(EXTRA_MESSAGE, 1)
+            putExtra(EXTRA_MESSAGE, intentVal)
         }
         startActivity(intent)
     }
